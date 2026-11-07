@@ -1,0 +1,82 @@
+{
+  "loss": "L1Loss",
+  "optimizer": "Adam",
+  "learning_rate": 0.001,
+  "batch_size": 1024,
+  "max_epochs": 100,
+  "patience": 10,
+  "seed": 42,
+  "target_scaling": false,
+  "device": "cpu",
+  "input_dim": 226,
+  "hidden_dims": [
+    256,
+    128,
+    64
+  ],
+  "output_dim": 4,
+  "mode": "full",
+  "epochs_to_run": 100,
+  "threads": 4,
+  "num_workers": 0,
+  "python": "3.9.12",
+  "torch_version": "2.8.0+cpu",
+  "train_rows": 648000,
+  "validation_rows": 81000,
+  "trainable_parameters": 99524,
+  "training_mae_definition": "element-weighted MAE during optimizer updates",
+  "source_artifacts": {
+    "sample_submission.csv": [
+      218926,
+      1792842236336021700
+    ],
+    "test.csv": [
+      24144593,
+      1792842236591056900
+    ],
+    "train.csv": [
+      1964116076,
+      1792842260402156500
+    ],
+    "outputs\\preprocessed\\X_holdout_test_scaled.npy": [
+      73224128,
+      1793799389887074900
+    ],
+    "outputs\\preprocessed\\X_train_scaled.npy": [
+      585792128,
+      1793799389866506500
+    ],
+    "outputs\\preprocessed\\X_validation_scaled.npy": [
+      73224128,
+      1793799389875427200
+    ],
+    "outputs\\preprocessed\\y_holdout_test.npy": [
+      1296128,
+      1793799389887074900
+    ],
+    "outputs\\preprocessed\\y_train.npy": [
+      10368128,
+      1793799389870911200
+    ],
+    "outputs\\preprocessed\\y_validation.npy": [
+      1296128,
+      1793799389882265800
+    ],
+    "outputs\\preprocessors\\preprocessing_config.json": [
+      5301,
+      1793799458686408600
+    ],
+    "outputs\\preprocessors\\training_channel_scaling_statistics.csv": [
+      19319,
+      1793799458686408600
+    ],
+    "outputs\\preprocessors\\x_scaler.joblib": [
+      6039,
+      1793799389809987700
+    ],
+    "outputs\\splits\\data_split_indices.npz": [
+      6480772,
+      1793798742916074600
+    ]
+  }
+}

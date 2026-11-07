@@ -1,0 +1,54 @@
+{
+  "source": "train.csv",
+  "index_semantics": "zero-based data row position; excludes CSV header",
+  "random_state": 42,
+  "fractions": {
+    "train": 0.8,
+    "validation": 0.1,
+    "holdout_test": 0.1
+  },
+  "shapes": {
+    "train": {
+      "rows": 648000,
+      "X_shape": [
+        648000,
+        226
+      ],
+      "y_shape": [
+        648000,
+        4
+      ]
+    },
+    "validation": {
+      "rows": 81000,
+      "X_shape": [
+        81000,
+        226
+      ],
+      "y_shape": [
+        81000,
+        4
+      ]
+    },
+    "holdout_test": {
+      "rows": 81000,
+      "X_shape": [
+        81000,
+        226
+      ],
+      "y_shape": [
+        81000,
+        4
+      ]
+    }
+  },
+  "pairwise_overlap": {
+    "train_validation": 0,
+    "train_holdout_test": 0,
+    "validation_holdout_test": 0
+  },
+  "covers_each_train_row_once": true,
+  "public_test_used_for_evaluation": false,
+  "holdout_reuse": "Keep holdout_test fixed for final evaluation and week-2 noise experiments.",
+  "indices_file": "splits\\data_split_indices.npz"
+}

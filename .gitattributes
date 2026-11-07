@@ -1,0 +1,2 @@
+# Keep the exact transfer bytes on Windows and Linux, including CSV/JSON.
+artifacts/** -text

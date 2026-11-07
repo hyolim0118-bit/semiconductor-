@@ -1,0 +1,34 @@
+{
+  "mode": "full",
+  "epochs_completed": 100,
+  "best_epoch": 100,
+  "best_validation_mae": 17.99285922617971,
+  "stopped_early": false,
+  "training_loop_seconds": 915.1992368,
+  "first_epoch": {
+    "epoch": 1,
+    "training_mae": 66.23812577085141,
+    "validation_mae": 55.632187009458185,
+    "train_seconds": 3.5599686999999998,
+    "validation_seconds": 0.2508271999999998,
+    "epoch_seconds": 3.8216565,
+    "working_set_mib": 878.453125,
+    "peak_working_set_mib": 878.453125
+  },
+  "estimated_100_epoch_seconds": 382.16565,
+  "estimate_note": "Linear estimate; CPU load/cache and early stopping affect actual time",
+  "memory_before": {
+    "working_set_mib": 230.99609375,
+    "peak_working_set_mib": 230.99609375,
+    "private_commit_mib": 756.640625
+  },
+  "memory_after": {
+    "working_set_mib": 909.90234375,
+    "peak_working_set_mib": 910.2109375,
+    "private_commit_mib": 814.6171875
+  },
+  "checkpoint_reload_validation_mae": 17.99285922617971,
+  "checkpoint_reload_seconds": 0.17849290000003748,
+  "source_sizes_and_mtimes_unchanged": true,
+  "holdout_used": false
+}

@@ -1,0 +1,23 @@
+{
+  "command": "./.venv/Scripts/python.exe -m src.train --full",
+  "process_exit_code": 0,
+  "process_wall_seconds": 919.6112201,
+  "training_loop_seconds": 915.1992368,
+  "epochs_logged": 100,
+  "early_stopping_triggered": false,
+  "stop_reason": "maximum_epochs_reached",
+  "best_epoch": 100,
+  "best_validation_mae": 17.99285922617971,
+  "last_training_mae": 17.73724191811644,
+  "last_validation_mae": 17.99285922617971,
+  "reloaded_validation_mae": 17.99285922617971,
+  "reload_absolute_difference": 0.0,
+  "history_minimum_matches_summary": true,
+  "peak_process_working_set_mib": 910.2109375,
+  "prior_smoke_files_sha256_sizes_and_mtimes_unchanged": true,
+  "source_artifact_sizes_and_mtimes_unchanged": true,
+  "training_code_or_hyperparameters_changed": false,
+  "holdout_used": false,
+  "step_10_evaluation_run": false,
+  "gaussian_noise_experiment_run": false
+}

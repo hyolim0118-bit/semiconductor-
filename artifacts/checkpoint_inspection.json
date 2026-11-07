@@ -1,0 +1,32 @@
+{
+  "checkpoint_bytes": 1205379,
+  "keys": [
+    "config",
+    "epoch",
+    "model_state_dict",
+    "optimizer_state_dict",
+    "validation_mae"
+  ],
+  "epoch": 100,
+  "validation_mae": 17.99285922617971,
+  "trainable_parameters": 99524,
+  "model_strict_load": true,
+  "adam_state_load": true,
+  "adam_parameter_states": 8,
+  "adam_steps": [
+    63300
+  ],
+  "optimizer_learning_rates": [
+    0.001
+  ],
+  "device_checked": "cpu",
+  "torch_version": "2.8.0+cpu",
+  "cuda_build": null,
+  "cuda_available": false,
+  "gpu_name": null,
+  "rng_state_saved": false,
+  "shuffle_generator_state_saved": false,
+  "scheduler_state_saved": false,
+  "resume_cli_implemented": false,
+  "training_or_validation_run": false
+}

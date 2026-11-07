@@ -5,3 +5,15 @@ __pycache__/
 train.csv
 test.csv
 sample_submission.csv
+
+# Large/private data stay outside Git. Allow only curated small artifact CSVs.
+*.npy
+*.csv
+!artifacts/preprocessors/training_channel_scaling_statistics.csv
+!artifacts/statistics/*.csv
+!artifacts/baseline_100epoch/history.csv
+.venv-gpu/
+venv/
+.env
+.env.*
+scratch/
