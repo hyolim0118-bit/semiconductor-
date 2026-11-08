@@ -17,3 +17,4 @@ venv/
 .env
 .env.*
 scratch/
+share_packages/

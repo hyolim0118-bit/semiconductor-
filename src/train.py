@@ -9,6 +9,7 @@ import math
 import os
 from pathlib import Path
 import random
+import shutil
 import time
 import uuid
 
@@ -143,7 +144,7 @@ def save_json(path, value):
         json.dump(value, stream, ensure_ascii=False, indent=2, allow_nan=False)
 
 
-def plot_history(history, path):
+def plot_history(history, path, resume_epoch=None):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -153,14 +154,16 @@ def plot_history(history, path):
                        ("validation_mae", "Validation")):
         ax.plot([row["epoch"] for row in history], [row[key] for row in history],
                 marker="o", label=label)
-    ax.set(xlabel="Epoch", ylabel="MAE (original target units)", title="MLP baseline")
+    if resume_epoch is not None:
+        ax.axvline(resume_epoch, color="gray", linestyle="--", label="Resume boundary")
+    ax.set(xlabel="Epoch", ylabel="MAE (original target units)", title="MLP learning curve")
     ax.legend()
     fig.tight_layout()
     fig.savefig(str(path), dpi=150)
     plt.close(fig)
 
 
-def run_training(full=False, threads=None):
+def run_training(full=False, threads=None, resume=None):
     threads = min(4, os.cpu_count() or 1) if threads is None else threads
     if threads < 1:
         raise ValueError("threads must be positive")
@@ -188,7 +191,29 @@ def run_training(full=False, threads=None):
         return {str(p.relative_to(ROOT)): [p.stat().st_size, p.stat().st_mtime_ns]
                 for p in source_paths}
     before = snapshot()
+    parent_history = []
+    checkpoint = None
+    start_epoch = 0
+    if resume is not None:
+        resume = Path(resume).resolve()
+        checkpoint = torch.load(str(resume), map_location="cpu", weights_only=True)
+        previous_config = checkpoint["config"]
+        for key in SETTINGS:
+            if key != "max_epochs" and previous_config[key] != SETTINGS[key]:
+                raise ValueError("Resume setting mismatch: " + key)
+        if previous_config["source_artifacts"] != before:
+            raise ValueError("Source artifacts differ from the original run")
+        with (resume.parent / "history.csv").open(encoding="utf-8", newline="") as stream:
+            parent_history = [{key: float(value) for key, value in row.items()}
+                              for row in csv.DictReader(stream)]
+        start_epoch = int(checkpoint["epoch"])
+        if start_epoch != 100 or int(parent_history[-1]["epoch"]) != start_epoch:
+            raise ValueError("STEP 9-4 requires the best checkpoint at the completed epoch 100")
+        source_paths.extend(p for p in resume.parent.rglob("*") if p.is_file())
+        before = snapshot()
     mode = "full" if full else "smoke_1epoch"
+    if checkpoint is not None:
+        mode = "resume_" + mode
     run_dir = ROOT / "outputs" / "training" / (
         datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + mode + "_" + uuid.uuid4().hex[:8])
     run_dir.mkdir(parents=True, exist_ok=False)
@@ -198,6 +223,10 @@ def run_training(full=False, threads=None):
                   trainable_parameters=count_trainable_parameters(MLPRegressor()),
                   training_mae_definition="element-weighted MAE during optimizer updates",
                   source_artifacts=before)
+    if checkpoint is not None:
+        config.update(max_epochs=200, resume_checkpoint=str(resume), start_epoch=start_epoch,
+                      rng_note="Original RNG and DataLoader shuffle states were not saved; "
+                               "seeded restart does not reproduce uninterrupted training.")
     save_json(run_dir / "config.json", config)
     print("Run directory:", run_dir.relative_to(ROOT).as_posix(), flush=True)
     smoke = smoke_update(train)
@@ -212,6 +241,36 @@ def run_training(full=False, threads=None):
     train_loader = make_loader(train, True, generator)
     validation_loader = make_loader(validation, False, torch.Generator().manual_seed(42))
     history, best, best_epoch, stale = [], math.inf, 0, 0
+    baseline_best = None
+    if checkpoint is not None:
+        model.load_state_dict(checkpoint["model_state_dict"], strict=True)
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        if len(optimizer.state) != len(list(model.parameters())):
+            raise RuntimeError("Adam state missing for some parameters")
+        for parameter, state in optimizer.state.items():
+            if state["step"].item() <= 0:
+                raise RuntimeError("Invalid Adam step")
+            for name in ("exp_avg", "exp_avg_sq"):
+                if state[name].shape != parameter.shape or not torch.isfinite(state[name]).all():
+                    raise RuntimeError("Invalid Adam moment: " + name)
+        if any(group["lr"] != SETTINGS["learning_rate"] for group in optimizer.param_groups):
+            raise ValueError("Restored Adam learning rate differs")
+        best = baseline_best = float(checkpoint["validation_mae"])
+        best_epoch = start_epoch
+        initial_mae, initial_seconds = run_epoch(model, validation_loader, criterion)
+        if not math.isclose(initial_mae, best, rel_tol=0, abs_tol=1e-7):
+            raise RuntimeError("Resume validation MAE differs from saved checkpoint")
+        verification = dict(model_loaded=True, optimizer_loaded=True,
+                            optimizer_parameter_states=len(optimizer.state),
+                            adam_steps=sorted({float(s["step"].item()) for s in optimizer.state.values()}),
+                            learning_rate=optimizer.param_groups[0]["lr"],
+                            saved_validation_mae=best, restored_validation_mae=initial_mae,
+                            absolute_difference=abs(initial_mae - best),
+                            validation_seconds=initial_seconds, rng_note=config["rng_note"])
+        save_json(run_dir / "resume_verification.json", verification)
+        print(json.dumps(verification), flush=True)
+        # Preserve the inherited best even if no additional epoch improves it.
+        shutil.copyfile(str(resume), str(run_dir / "best.pt"))
     memory_before = memory_usage()
     started = time.perf_counter()
     fields = ["epoch", "training_mae", "validation_mae", "train_seconds",
@@ -219,7 +278,7 @@ def run_training(full=False, threads=None):
     with (run_dir / "history.csv").open("x", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
-        for epoch in range(1, config["epochs_to_run"] + 1):
+        for epoch in range(start_epoch + 1, start_epoch + config["epochs_to_run"] + 1):
             epoch_started = time.perf_counter()
             train_mae, train_seconds = run_epoch(model, train_loader, criterion, optimizer)
             val_mae, val_seconds = run_epoch(model, validation_loader, criterion)
@@ -256,7 +315,12 @@ def run_training(full=False, threads=None):
         raise RuntimeError("Reloaded checkpoint validation MAE differs")
     if snapshot() != before:
         raise RuntimeError("Source artifact size/mtime changed")
-    plot_history(history, run_dir / "learning_curve.png")
+    plot_history(parent_history + history, run_dir / "learning_curve.png", start_epoch or None)
+    if parent_history:
+        with (run_dir / "combined_history.csv").open("x", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(parent_history + history)
     summary = dict(mode=mode, epochs_completed=len(history), best_epoch=best_epoch,
                    best_validation_mae=best, stopped_early=full and stale >= SETTINGS["patience"],
                    training_loop_seconds=elapsed, first_epoch=history[0],
@@ -267,6 +331,11 @@ def run_training(full=False, threads=None):
                    checkpoint_reload_seconds=reload_seconds,
                    source_sizes_and_mtimes_unchanged=True,
                    holdout_used=False)
+    if baseline_best is not None:
+        summary.update(resume_epoch=start_epoch, final_epoch=history[-1]["epoch"],
+                       baseline_best_validation_mae=baseline_best,
+                       improvement_percent=(baseline_best - best) / baseline_best * 100,
+                       rng_note=config["rng_note"])
     save_json(run_dir / "summary.json", summary)
     print(json.dumps(summary, indent=2), flush=True)
     return run_dir
@@ -276,5 +345,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--full", action="store_true", help="Train up to 100 epochs with early stopping")
     parser.add_argument("--threads", type=int, default=None, help="CPU threads (default: up to 4)")
+    parser.add_argument("--resume", type=Path, help="Resume epoch-100 best.pt; default: one additional epoch; --full: up to epoch 200")
     args = parser.parse_args()
-    run_training(full=args.full, threads=args.threads)
+    run_training(full=args.full, threads=args.threads, resume=args.resume)

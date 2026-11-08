@@ -1,0 +1,30 @@
+{
+  "input_dim": 226,
+  "output_dim": 4,
+  "training": {
+    "loss": "L1Loss",
+    "optimizer": "Adam",
+    "learning_rate": 0.0003,
+    "batch_size": 1024,
+    "max_epochs": 200,
+    "patience": 15,
+    "seed": 42,
+    "threads": 4,
+    "target_scaling": false,
+    "device": "cpu"
+  },
+  "historical_reference": {
+    "checkpoint": "outputs/lr_comparison/20261107_132952_full_8457bb4f/lr_0.0003/best.pt",
+    "validation_mae": 14.413521503778151,
+    "epoch": 244,
+    "note": "Historical LR-tuned continuation; not part of the equal-budget ranking."
+  },
+  "models": [
+    {"id": "A", "name": "baseline_mlp", "kind": "mlp", "hidden_dims": [256, 128, 64], "dropout": 0.0},
+    {"id": "B", "name": "small_mlp", "kind": "mlp", "hidden_dims": [128, 64], "dropout": 0.0},
+    {"id": "C", "name": "wide_mlp", "kind": "mlp", "hidden_dims": [512, 256, 128], "dropout": 0.0},
+    {"id": "D", "name": "deep_mlp", "kind": "mlp", "hidden_dims": [256, 256, 128, 64], "dropout": 0.0},
+    {"id": "E", "name": "residual_mlp_small", "kind": "residual", "width": 128, "blocks": 2, "hidden_factor": 1.0, "hidden_dropout": 0.1, "residual_dropout": 0.1, "head_batchnorm": true},
+    {"id": "F", "name": "residual_mlp_large", "kind": "residual", "width": 256, "blocks": 3, "hidden_factor": 1.0, "hidden_dropout": 0.1, "residual_dropout": 0.1, "head_batchnorm": true}
+  ]
+}
